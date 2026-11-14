@@ -1,0 +1,13 @@
+{
+  "name": "token-radar",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Ranks the pre-token protocols a sealed DefiLlama snapshot carries by an implied value.",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "node main.ts --input input --output out"
+  }
+}
