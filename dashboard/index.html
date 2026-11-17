@@ -35,7 +35,7 @@
   </p>
 
   <div class="strip" aria-label="Model at a glance">
-    <span class="chip"><i>base</i> TVL × 0.22</span>
+    <span class="chip"><i>base</i> TVL × <span id="base-share">0.22</span> <span id="base-source">(peer median)</span></span>
     <span class="chip"><i>momentum</i> 1 + change / 100 × 0.5, clamped −40% to +80%</span>
     <span class="chip"><i>age</i> ×0.85 → ×1.20 over 2190 days</span>
     <span class="chip"><i>category</i> ×0.72 (meme) → ×1.40 (lending)</span>
@@ -47,8 +47,9 @@
     <summary>Why each multiplier is there</summary>
     <div class="note-grid">
       <p><b>base</b> — TVL is the only hard number here: capital already trusting the book. The float a
-      token would put in play is a fraction of it, so the base takes 0.22 of TVL. Without it the board
-      would rank by TVL alone.</p>
+      token would put in play is a fraction of it, so the base takes <span id="base-share-note">0.22</span>
+      of TVL: the median market-cap-to-TVL multiple of the snapshot's own token-bearing protocols, held
+      inside a fixed band so a few outliers cannot set it. Without it the board would rank by TVL alone.</p>
       <p><b>momentum</b> — a book people moved into over seven days is the behaviour a launch monetises
       later. Clamped at −40% and +80%, weighted 0.5: momentum modifies a book, it is not a book.</p>
       <p><b>age</b> — years with no token is the strongest argument a protocol has: the team kept the

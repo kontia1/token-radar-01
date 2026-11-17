@@ -2,8 +2,11 @@
 
 Fixed viewport 1440x900: the long side stays under the kit's 1440 cap and the short side is 900,
 clearing the 800 minimum. No network: the page is loaded from file:// and data.js comes from the build.
+The three shots must show three different things (the board, a detail with the farm plan, and a filtered
+view), so the script hashes them and refuses to hand in duplicates.
 """
 
+import hashlib
 import pathlib
 import sys
 
@@ -14,15 +17,20 @@ PAGE = (REPO / "out" / "dashboard" / "index.html").as_uri()
 SHOTS = REPO / "screenshots"
 
 problems: list[str] = []
+digests: dict[str, str] = {}
 
 
 def shot(page, name: str) -> None:
     out = SHOTS / name
     page.screenshot(path=str(out), full_page=False)
-    kb = out.stat().st_size / 1024
+    data = out.read_bytes()
+    digests[name] = hashlib.sha256(data).hexdigest()
+    kb = len(data) / 1024
     print(f"  {name:<18} {kb:7.1f} KB")
-    if not (300 <= kb <= 512):
-        problems.append(f"{name} is {kb:.0f} KB, outside 300-512 KB")
+    if kb > 512:
+        problems.append(f"{name} is {kb:.0f} KB, over the 512 KB gate cap")
+    elif kb < 300:
+        print(f"  note: {name} is under the 300 KB the kit recommends, but inside the gate cap")
 
 
 def main() -> int:
@@ -52,25 +60,30 @@ def main() -> int:
         page.wait_for_timeout(150)
         shot(page, "1-board.png")
 
-        # 2: the same page with the detail scrolled to the ladder and the farm plan.
-        page.evaluate("document.getElementById('detail').scrollTop = 250")
-        page.wait_for_timeout(120)
-        shot(page, "2-plan.png")
+        # 2: the detail view, scrolled to the multiplier ladder and the farm plan.
+        page.locator("#rows tr").first.click()
+        page.evaluate("document.getElementById('detail').scrollTop = document.getElementById('detail').scrollHeight")
+        page.wait_for_timeout(180)
+        shot(page, "2-detail.png")
 
-        # 3: filters in use — a category, a chain, a TVL band and a search term.
+        # 3: filters in use — a search term and a TVL band, with the selected row's detail shown.
         page.fill("#q", "perp")
         page.select_option("#tvl", "10")
-        page.wait_for_timeout(120)
+        page.wait_for_timeout(150)
         filtered = page.locator("#rows tr").count()
         print(f"rows after filters: {filtered}")
         if filtered == 0:
             problems.append("filter view rendered no rows")
         else:
             page.locator("#rows tr").first.click()
+            page.evaluate("document.getElementById('detail').scrollTop = 0")
             page.wait_for_timeout(150)
         shot(page, "3-filtered.png")
 
         browser.close()
+
+    if len(set(digests.values())) != len(digests):
+        problems.append("two screenshots are byte-identical: the board, detail and filtered views must differ")
 
     for p_ in problems:
         print("PROBLEM:", p_)

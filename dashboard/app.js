@@ -6,7 +6,9 @@
  *
  * THE MODEL, AS THE PAGE SHOWS IT (lib/model.ts holds the same constants with the full reasoning):
  *
- *   base     = tvl_usd * 0.22                    the float a token would put in play, as a share of TVL
+ *   base     = tvl_usd * M.value_share             the float a token would put in play, as a share of TVL;
+ *                                                  M.value_share is the snapshot's own median mcap/TVL over
+ *                                                  its token-bearing protocols, clamped; 0.22 is the prior
  *   momentum = 1 + clamp(change_7d, -40, 80)/100 * 0.5
  *   age      = 0.85 + min(age_days, 2190)/2190 * 0.35      years with no token is a proven book
  *   category = first band matching the category: lending 1.40, DEX 1.34, perps 1.30, CDP 1.24,
@@ -354,7 +356,10 @@
 
     var tb = el('tbody');
     var running = m.base_usd;
-    tb.appendChild(ladderRow('TVL × ' + M.value_share, 'the float a launch would carry, as a share of the book', usd(r.tvl_usd), running, null));
+    var baseWhy = M.value_share_basis === 'snapshot-median'
+      ? 'the float a launch would carry: the snapshot’s median mcap/TVL across ' + M.value_share_sample + ' token-bearing protocols'
+      : 'the float a launch would carry, at the model’s prior share of the book';
+    tb.appendChild(ladderRow('TVL × ' + M.value_share, baseWhy, usd(r.tvl_usd), running, null));
 
     var steps = [
       ['momentum', m.growth_multiplier, '7d TVL ' + pct(r.change_7d) + ', clamped to −' + Math.abs(M.growth_floor) + '%..+' + M.growth_cap + '% and weighted ' + M.growth_weight],
@@ -538,6 +543,14 @@
   $('universe').textContent = R.universe.protocols + ' (' + R.universe.pre_token + ' no token)';
   $('ranked').textContent = R.universe.ranked + ' of ' + R.universe.pre_token;
   $('model-version').textContent = R.model_version;
+
+  // The base is calibrated per run, so no static number in the page can be allowed to drift from it.
+  var shareText = String(M.value_share).replace(/0+$/, '').replace(/\.$/, '');
+  $('base-share').textContent = shareText;
+  $('base-share-note').textContent = shareText;
+  $('base-source').textContent = M.value_share_basis === 'snapshot-median'
+    ? '(peer median of ' + M.value_share_sample + ')'
+    : '(model prior)';
 
   detail.setAttribute('data-empty', '1');
   markSort();
